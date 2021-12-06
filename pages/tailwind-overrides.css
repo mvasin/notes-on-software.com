@@ -1,0 +1,7 @@
+.prose code::before {
+  content: ''
+}
+
+.prose code::after {
+  content: ''
+}
