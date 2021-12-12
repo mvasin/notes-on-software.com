@@ -1,0 +1,177 @@
+[Home](/)
+
+# Selecting DOM elements in tests
+
+When I searched the internet a while ago looking for the best way to relyably
+select DOM elements in tests, all the advices I found were about how to deal
+with existing applications, from a QA engineer point of view. But I was
+interested what approach would be the best to start with, to implement as a
+developer. That's the focus of this article.
+
+## Approaches to selecting DOM elements
+
+Let's explore what are the options.
+
+### test-id and data-* attributes
+
+A popular way to tag HTML elements for easier and more reliable selection in
+tests is by adding `test-id` attribute:
+
+```
+<div test-id="I am the div that you need"></div>
+```
+
+The HTML spec does not allow random attributes on DOM elements, and `test-id` is
+not a standard attribute. We don't want to be arrested by the W3C police
+department, so let's consider it a pass.
+
+`data-*` attributes, for instance `data-test-id` or `data-cy`, are
+conceptually no different from `test-id`, but HTML spec-compliant.
+
+[Selectors spec](https://www.w3.org/TR/selectors-4/) lists a few the ways of
+selecting DOM elements using HTML attributes, here's an example of using such
+selectors in JavaScript:
+
+```
+# to find <div data-cy="foo">hi</div>
+document.querySelector("[data-cy='foo']")
+
+# to find <div test-id="barbecue">hi</div> or <div test-id="barbara">hi</div>
+document.querySelector("[test-id^='bar']")
+```
+
+Nothing prevents us to use multiple `data-*` attributes, adding elaborate meta
+information to the DOM elements.
+
+One question, though: if we put an effort into exposing this much data into the
+DOM, why not make it _accessible_ to the user?
+
+### Exposing React component names manually
+
+If frontenders think in components (i.e. React components), and often even test
+not the whole application but individual components, why wouldn't they share
+this mindset with QAs and expose the component names into the DOM?
+
+The outer DOM elements of components might be given an attribute like
+`data-component-name` or just `data-component`:
+
+```
+const MyComponent = ({name}) => (
+  <div data-component="MyComponent">
+    <div>Hello, {name}!</div>
+  </div>
+)
+```
+
+We tried this in a big project and it worked, but there's a downside: testing
+code becomes tangled with the frontend code implementation details, which React
+components are; refactoring components might break tests.
+
+### Using React component names effortlessly
+
+This is a twist on the previous idea.
+
+If you have the React Developer Tools extension installed, you should be
+familiar with the Components tab in the browser console. Think for a moment what
+happens when you click the rectangle and cursor icon on the Components tab in
+console: you select a DOM element on the page and see the corresponding component
+in the tree of React components. So there's obviously a mapping between the two!
+
+Webdriver.io pioneered with this approach, providing the
+[API](https://webdriver.io/docs/api/browser/react$) that allows to find DOM
+elements by React component names. It uses the
+[resq](https://github.com/baruchvlz/resq) library under the hood, and anyone can
+use that library even directly, without webdriver.io. Want to try? Here's how to
+do it using vanilla JS:
+
+1. Open any website that uses React. This website uses React, so you can just
+stay on this page and proceed to the next step.
+
+2. Open the browser console. Make sure you have React Developer Tools browser
+extension installed. Once the extension is installed, you should see the
+"Components" tab.
+
+3. Import the `resq` library into the page as a global variable. In a real
+project you might want to import the `resq` package from npm, but because `resq`
+exports UMD module, here's a fun way to inject it into any existing page. Paste
+the following into the browser console and hit Enter:
+
+```
+const script = document.createElement('script');
+script.type = 'text/javascript'
+script.src = 'https://unpkg.com/resq@1.10.1/dist/index.js'
+document.body.appendChild(script)
+```
+
+Now you've got `resq` object available (type `resq` and hit Enter in the
+console, there should be no error). The `resq` API is described at
+https://github.com/baruchvlz/resq.
+
+4. In the browser console, open the Components tab, find and remember any
+component name. If the code is minified, most of the component names will be one
+or two letter words.
+
+5.  Explore the DOM tree ("Elements" tab in the console in Chrome) and find the
+root node of the application. If you don't have access to the source code it
+takes a bit of a guess work, usually that's something like `<div id="app">`,
+`<div id="root">`, `<div id="___gatsby">` or `<div id="__next">`.
+
+```
+// The React application's root node
+const appRootNode = document.getElementById('__next')
+
+// A component name from the Components tab
+const componentName = 'Button' // replace with any actual name!
+
+// Returns the DOM node
+resq.resq$(componentName, appRootNode).node
+```
+
+Voilà - we are able to select DOM elements by React component names even out of
+a coplete soup of divs with zero effort from the frontenders.
+
+There's a challange, though: most React apps go through code minification in the
+build step, and what I found tricky was to minify the code while keeping the
+component names _not_ minified. I tinkered with webpack settings, to no success.
+Theoretically source maps should help, but the mindmap support in `resq` is
+[still pending](https://github.com/baruchvlz/resq/issues/17). Note that the
+minified names change on every re-build, so it doesn't make sense to hardcode
+those in tests.
+
+This approach has the same downside as the previous approach - it's not
+refactoring-friendly, and in addition it relies on React's internals which
+theoretically can change any time with the version change of React.
+
+### XPath selectors
+
+While XPath is sometimes mentioned as a way to select DOM elements, it's just a
+programming API which bears no additional semantics. And the point of this
+article is to agree on semantics.
+
+### Selecting via accessibility attributes
+
+Consider a not-so-semantic piece of HTML, which thanks to some CSS and JS
+visually appears as a familiar widget, for instance a range slider. Useful for a
+person without disabilities, not so useful for a screen reader trying to
+pronounce the contents of the page to a visually-impaired user.
+
+A better way would be to use semantically appropriate HTML elements and `aria-*`
+attributes, so not only we will not have to reinvent with `data-*` attributes
+what's already been thought through with ARIA, but also to finally start paying
+real attention to the accessibility of our web apps.
+
+It's not that accessibility requires a lot of efforts to implement, but it does
+require an effort to figure it out - there's a learning curve for developers.
+**Screen readers need the same hints to read the web page out loud that a
+testing code needs**, and if application accessibility becomes crucial for
+testing, developers can finally allocate some time to learn about accessibility
+and simplyfy life of both testers and people with disabilities. A double win!
+
+For more details on how to use assessibility-related properties of DOM elements
+in tests, check out the [next post](/posts/testing-via-a11y).
+
+## Summary
+
+We compared various approaches to selecting DOM elements in tests and concluded
+that using accessibility attributes for selecting DOM elements could be the best
+approach in many cases.

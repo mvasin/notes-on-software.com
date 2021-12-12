@@ -1,0 +1,137 @@
+[Home](/)
+
+import Image from 'next/image'
+import inputTypeButton from './input-type-button.png'
+import buttonLogoAlt from './button-logo-alt.png'
+
+# Testing via accessibility properties
+
+In the [previous post](/posts/selecting-dom-elements-overview) I shared why
+accessibility properties of DOM elements might be the best way to target
+elements in tests. In this post let's see how can we practically do it.
+
+## Accessiblity basics
+
+Every DOM element has an "accessible name" and a "role", those are probably the
+most important accessibility-related properties of a DOM element, let's briefly
+review them.
+
+### Accessible names
+
+Simply put, the accessible name would be inferred from the text content of an
+HTML element, or from an "alt" attribute if it's an image - there's a
+[spec](https://www.w3.org/TR/accname-1.2/) describing how the accessible name
+should be calculated by a browser. `aria-label` attribute should be specified
+only when there's a need to override the otherwise inferred accessible name.
+
+### Roles
+
+Roles are used to categorize elements of user interface. This means that knowing
+the role, a screen reader would be able to explain to a blind user what kind of
+a widget is in front of them. Be it an HTML element like `<input type="range">`
+or, if we want to re-create the slider ourselves, a ridicilous soup of `div`s with
+the `slider` role explicitly specified `<div aria-role="slider">...</div>`, in
+both cases disabled users will be able to reason about and interact with in the
+slider the same way.
+
+Key takeaway of this section: prefer the semantically appropriate HTML elements
+and do not specify `aria-*` attributes manually unless absolutely necessary;
+semantic HTML markup already implies sane defaults. How do you know if it's
+necessary or not? Check the "Accessibility" sub-tab of the "Elements" tab:
+"Computed Properties" section should contain meaningful `Name` and `Role`
+properties.
+
+## A quick accessibility lab
+
+Let's do a quick lab to consolidate what we've just discussed.
+
+Start with the following HTML document, intentionally using non-semantic HTML
+elements. Save it as an HTML file and open in a browser.
+
+```
+<html>
+  <body>
+    <div style="border: 1px solid black; display: inline;">click me</div>
+  </body>
+</html>
+```
+
+If you're on a Mac, trying this page in a screen reader takes 2 seconds: slick
+the "Siri" button at the top right, ask Siri to turn on VoiceOver and
+refresh the web page. You will hear VoiceOver saying "click me", giving no hint
+if that it's a button.
+
+Let's improve the code by using the semantically suitable HTML element:
+
+```
+<html>
+  <body>
+    <input type="button" value="click me" />
+  </body>
+</html>
+```
+
+Now VoiceOver says "click me, button". Way better!
+
+Here's how the "Accessibility" sub-tab of the "Elements" tab looks in Chrome:
+
+<Image src={inputTypeButton} alt="default accessibility attributes of the input field" />
+
+Notice `Role: button` and `Name: "click me"` are inferred in without us
+specifying `aria-role` and `aria-label`.
+
+If we replace `<input type="button" value="click me" />` with
+`<button>click me</button>`, nothing changes in accessibility attributes, just
+as nothing changes in the user experience.
+
+Now we can even use an image in the button, and as long as `alt` attribute is
+filled in, the same tests continue to pass:
+
+<Image src={buttonLogoAlt} alt="accessibility attributes of a button with an image" />
+
+Note on the screenshot that the Computed Properties accordeon section gives us a
+hint where the accessible name was inferred from (the `alt` attribute in this
+case).
+
+So accessibility attributes serve as a higher order abstraction, allowing
+refactoring without breaking tests. Sweet!
+
+## Using accessibility properties
+
+Unfortunately, as of late 2021, there's no way to query the accessibility tree.
+Accessibility Object Model specification which aims to enable that is still in
+early draft.
+
+We can't select with `document.querySelector("[aria-label='click me']")` if
+`aria-label` was not explicitly specified, and it's important from both
+productivity and correctness perspective not to specify the accessibility
+attributes explicitly unless abolutely needed.
+
+But we know from the [ARIA spec](https://www.w3.org/TR/wai-aria-1.1) which HTML
+elements correspond to which roles, that's 1:1 mapping. And the the algorithm of
+inferring accessible names which is described in ["Accessible Name and
+Description Computation" spec](https://www.w3.org/TR/accname-1.1/) can also be
+implemented. In fact, both are already realized in the [Testing
+library](https://testing-library.com/). Until the Accessibility Object Model
+describes the API to query DOM elements by computed accessibility properties and
+the browsers implement it, I suggest to use the Testing library.
+
+## Summary
+
+Accessibility attributes provide a nice higher order abstraction, which allows
+to refactor implementation while keeping the tests. Just note that there's no
+standard API for quering DOM elements by their counterpart nodes in the
+accessibility tree yet, but [Testing library](https://testing-library.com/) can
+serve as a polyfill.
+
+## Additional reading
+
+Blog posts can fill in some gaps or give initial idea, but to really wrap your
+head around accessibility, use should allocate time to read the specs:
+
+- [ARIA in HTML](https://www.w3.org/TR/html-aria/)
+- [Accessible Rich Internet Applications](https://www.w3.org/TR/wai-aria-1.1/)
+- [WAI-ARIA Authoring Practices](https://www.w3.org/TR/wai-aria-practices-1.2/)
+- [Understanding Web Content Accessibility Guidelines](https://www.w3.org/TR/UNDERSTANDING-WCAG20/)
+- [Accessible Name and Description Computation](https://www.w3.org/TR/accname-1.2/)
+- [The Accessibility Object Model](https://wicg.github.io/aom/)
