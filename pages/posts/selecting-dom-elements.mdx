@@ -2,7 +2,7 @@
 
 # Selecting DOM elements in tests
 
-When I searched the internet a while ago looking for the best way to relyably
+When I searched the internet a while ago looking for the best way to reliably
 select DOM elements in tests, all the advices I found were about how to deal
 with existing applications, from a QA engineer point of view. But I was
 interested what approach would be the best to start with, to implement as a
@@ -15,7 +15,7 @@ Let's explore what are the options.
 ### test-id and data-* attributes
 
 A popular way to tag HTML elements for easier and more reliable selection in
-tests is by adding `test-id` attribute:
+tests is by adding a `test-id` attribute:
 
 ```
 <div test-id="I am the div that you need"></div>
@@ -92,8 +92,8 @@ extension installed. Once the extension is installed, you should see the
 "Components" tab.
 
 3. Import the `resq` library into the page as a global variable. In a real
-project you might want to import the `resq` package from npm, but because `resq`
-exports UMD module, here's a fun way to inject it into any existing page. Paste
+project you might want to install the `resq` package from npm, but because `resq`
+exports a UMD module, here's a fun way to inject it into any existing page. Paste
 the following into the browser console and hit Enter:
 
 ```
@@ -133,7 +133,7 @@ a coplete soup of divs with zero effort from the frontenders.
 There's a challange, though: most React apps go through code minification in the
 build step, and what I found tricky was to minify the code while keeping the
 component names _not_ minified. I tinkered with webpack settings, to no success.
-Theoretically source maps should help, but the mindmap support in `resq` is
+Theoretically source maps should help, but the sourcemap support in `resq` is
 [still pending](https://github.com/baruchvlz/resq/issues/17). Note that the
 minified names change on every re-build, so it doesn't make sense to hardcode
 those in tests.
@@ -160,7 +160,7 @@ attributes, so not only we will not have to reinvent with `data-*` attributes
 what's already been thought through with ARIA, but also to finally start paying
 real attention to the accessibility of our web apps.
 
-It's not that accessibility requires a lot of efforts to implement, but it does
+It's not that accessibility requires a lot of effort to implement, but it does
 require an effort to figure it out - there's a learning curve for developers.
 **Screen readers need the same hints to read the web page out loud that a
 testing code needs**, and if application accessibility becomes crucial for
