@@ -37,9 +37,9 @@ slider the same way.
 Key takeaway of this section: prefer the semantically appropriate HTML elements
 and do not specify `aria-*` attributes manually unless absolutely necessary;
 semantic HTML markup already implies sane defaults. How do you know if it's
-necessary or not? Check the "Accessibility" sub-tab of the "Elements" tab:
-"Computed Properties" section should contain meaningful `Name` and `Role`
-properties.
+necessary or not? Check the "Accessibility" sub-tab of the "Elements" tab in
+Chrome DevTools: "Computed Properties" section should contain meaningful
+`Name` and `Role` properties.
 
 ## A quick accessibility lab
 
@@ -56,10 +56,10 @@ elements. Save it as an HTML file and open in a browser.
 </html>
 ```
 
-If you're on a Mac, trying this page in a screen reader takes 2 seconds: slick
+If you're on a Mac, trying this page in a screen reader takes 2 seconds: click
 the "Siri" button at the top right, ask Siri to turn on VoiceOver and
 refresh the web page. You will hear VoiceOver saying "click me", giving no hint
-if that it's a button.
+that it's a button.
 
 Let's improve the code by using the semantically suitable HTML element:
 
@@ -89,7 +89,7 @@ filled in, the same tests continue to pass:
 
 <Image src={buttonLogoAlt} alt="accessibility attributes of a button with an image" />
 
-Note on the screenshot that the Computed Properties accordeon section gives us a
+Note on the screenshot that the Computed Properties accordion section gives us a
 hint where the accessible name was inferred from (the `alt` attribute in this
 case).
 
@@ -104,23 +104,23 @@ early draft.
 
 We can't select with `document.querySelector("[aria-label='click me']")` if
 `aria-label` was not explicitly specified, and it's important from both
-productivity and correctness perspective not to specify the accessibility
-attributes explicitly unless abolutely needed.
+productivity and correctness perspectives not to specify the accessibility
+attributes explicitly unless absolutely needed.
 
 But we know from the [ARIA spec](https://www.w3.org/TR/wai-aria-1.1) which HTML
-elements correspond to which roles, that's 1:1 mapping. And the the algorithm of
-inferring accessible names which is described in ["Accessible Name and
+elements correspond to which roles, that's a 1:1 mapping. And the algorithm of
+inferring accessible names which is described in the ["Accessible Name and
 Description Computation" spec](https://www.w3.org/TR/accname-1.1/) can also be
 implemented. In fact, both are already realized in the [Testing
 library](https://testing-library.com/). Until the Accessibility Object Model
 describes the API to query DOM elements by computed accessibility properties and
-the browsers implement it, I suggest to use the Testing library.
+the browsers implement it, I suggest using the Testing library.
 
 ## Summary
 
 Accessibility attributes provide a nice higher order abstraction, which allows
-to refactor implementation while keeping the tests. Just note that there's no
-standard API for quering DOM elements by their counterpart nodes in the
+refactoring the implementation while keeping the tests. Just note that there's no
+standard API for querying DOM elements by their counterpart nodes in the
 accessibility tree yet, but [Testing library](https://testing-library.com/) can
 serve as a polyfill.
 
